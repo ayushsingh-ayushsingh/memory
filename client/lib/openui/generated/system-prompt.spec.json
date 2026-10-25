@@ -1,0 +1,503 @@
+{
+  "root": "Stack",
+  "components": {
+    "Stack": {
+      "signature": "Stack(items: (Heading | Text | List | Metric | Badge | Callout | Progress | Code | Table | Chart | Card)[], direction?: \"column\" | \"row\")",
+      "description": "Root container. Stacks its items vertically (default) or in a wrapping row. Every program starts with `root = Stack([...])`."
+    },
+    "Card": {
+      "signature": "Card(title: string, items: (Heading | Text | List | Metric | Badge | Callout | Progress | Code | Table | Chart)[])",
+      "description": "A titled card that groups a few components of the answer together."
+    },
+    "Heading": {
+      "signature": "Heading(text: string)",
+      "description": "Section title for the answer. Use once at the top of a program, not for every line."
+    },
+    "Text": {
+      "signature": "Text(content: string, tone?: \"default\" | \"subtle\" | \"success\" | \"error\")",
+      "description": "A short paragraph of prose. Plain sentences only — no markdown, no headings, no lists."
+    },
+    "List": {
+      "signature": "List(items: string[])",
+      "description": "Bulleted list of short items, one per line."
+    },
+    "Metric": {
+      "signature": "Metric(label: string, value: string | number, hint?: string)",
+      "description": "One key number with its label and an optional change note. Group several in a Stack row for a KPI strip."
+    },
+    "Badge": {
+      "signature": "Badge(label: string, tone?: \"neutral\" | \"info\" | \"success\" | \"warning\" | \"danger\")",
+      "description": "Small status label, for example next to a heading or inside a table cell."
+    },
+    "Callout": {
+      "signature": "Callout(title: string, body?: string, tone?: \"neutral\" | \"info\" | \"success\" | \"warning\" | \"danger\")",
+      "description": "Highlighted note for a warning, an error, a success or a tip."
+    },
+    "Progress": {
+      "signature": "Progress(label: string, value: number, max?: number, customValue?: string)",
+      "description": "A single value against a maximum, drawn as a progress bar. Use `value` with a percentage `max` (default 100)."
+    },
+    "Code": {
+      "signature": "Code(content: string)",
+      "description": "A code or command block, shown verbatim in monospace. Use for short snippets only; Python programs belong in a marimo notebook instead."
+    },
+    "Table": {
+      "signature": "Table(columns: string[], rows: (string | number)[][])",
+      "description": "Rows and columns of values, for comparisons and lists of records. `rows` are strings or numbers, in the same order as `columns`."
+    },
+    "Chart": {
+      "signature": "Chart(kind: \"area\" | \"bar\" | \"line\" | \"pie\", categories: string[], series: {name: string, values: number[]}[], title?: string)",
+      "description": "An animated chart. `categories` are the x labels (or the slices of a pie) and each series holds one value per category, in the same order."
+    }
+  },
+  "componentGroups": [
+    {
+      "components": [
+        "Stack",
+        "Card"
+      ],
+      "name": "Layout",
+      "notes": [
+        "- Stack is the root of every program. Use direction \"row\" for a strip of Metric components — it wraps on narrow screens.",
+        "- Neither Stack nor Card may contain another Stack or Card inside; nest content, not layout."
+      ]
+    },
+    {
+      "components": [
+        "Heading",
+        "Text",
+        "List",
+        "Metric",
+        "Badge",
+        "Callout",
+        "Code"
+      ],
+      "name": "Content",
+      "notes": [
+        "- Keep prose short and use the components instead of markdown.",
+        "- A row of Metric components answers “what are the numbers?” faster than a paragraph."
+      ]
+    },
+    {
+      "components": [
+        "Table",
+        "Progress",
+        "Chart"
+      ],
+      "name": "Data",
+      "notes": [
+        "- Table for exact values, Chart for shape over time (area, line, bar) or parts of a whole (pie).",
+        "- Chart: every series needs exactly one value per category. Use a single series for pie.",
+        "- Do not put a chart inside a row — charts need the full width."
+      ]
+    }
+  ],
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "Stack": {
+        "$ref": "#/$defs/Stack"
+      },
+      "Card": {
+        "$ref": "#/$defs/Card"
+      },
+      "Heading": {
+        "$ref": "#/$defs/Heading"
+      },
+      "Text": {
+        "$ref": "#/$defs/Text"
+      },
+      "List": {
+        "$ref": "#/$defs/List"
+      },
+      "Metric": {
+        "$ref": "#/$defs/Metric"
+      },
+      "Badge": {
+        "$ref": "#/$defs/Badge"
+      },
+      "Callout": {
+        "$ref": "#/$defs/Callout"
+      },
+      "Progress": {
+        "$ref": "#/$defs/Progress"
+      },
+      "Code": {
+        "$ref": "#/$defs/Code"
+      },
+      "Table": {
+        "$ref": "#/$defs/Table"
+      },
+      "Chart": {
+        "$ref": "#/$defs/Chart"
+      }
+    },
+    "required": [
+      "Stack",
+      "Card",
+      "Heading",
+      "Text",
+      "List",
+      "Metric",
+      "Badge",
+      "Callout",
+      "Progress",
+      "Code",
+      "Table",
+      "Chart"
+    ],
+    "additionalProperties": false,
+    "$defs": {
+      "Stack": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Heading"
+                },
+                {
+                  "$ref": "#/$defs/Text"
+                },
+                {
+                  "$ref": "#/$defs/List"
+                },
+                {
+                  "$ref": "#/$defs/Metric"
+                },
+                {
+                  "$ref": "#/$defs/Badge"
+                },
+                {
+                  "$ref": "#/$defs/Callout"
+                },
+                {
+                  "$ref": "#/$defs/Progress"
+                },
+                {
+                  "$ref": "#/$defs/Code"
+                },
+                {
+                  "$ref": "#/$defs/Table"
+                },
+                {
+                  "$ref": "#/$defs/Chart"
+                },
+                {
+                  "$ref": "#/$defs/Card"
+                }
+              ]
+            }
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "column",
+              "row"
+            ]
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false,
+        "description": "Root container. Stacks its items vertically (default) or in a wrapping row. Every program starts with `root = Stack([...])`."
+      },
+      "Heading": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false,
+        "description": "Section title for the answer. Use once at the top of a program, not for every line."
+      },
+      "Text": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "tone": {
+            "type": "string",
+            "enum": [
+              "default",
+              "subtle",
+              "success",
+              "error"
+            ]
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "additionalProperties": false,
+        "description": "A short paragraph of prose. Plain sentences only — no markdown, no headings, no lists."
+      },
+      "List": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false,
+        "description": "Bulleted list of short items, one per line."
+      },
+      "Metric": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "hint": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "additionalProperties": false,
+        "description": "One key number with its label and an optional change note. Group several in a Stack row for a KPI strip."
+      },
+      "Badge": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "tone": {
+            "type": "string",
+            "enum": [
+              "neutral",
+              "info",
+              "success",
+              "warning",
+              "danger"
+            ]
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "additionalProperties": false,
+        "description": "Small status label, for example next to a heading or inside a table cell."
+      },
+      "Callout": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "tone": {
+            "type": "string",
+            "enum": [
+              "neutral",
+              "info",
+              "success",
+              "warning",
+              "danger"
+            ]
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "additionalProperties": false,
+        "description": "Highlighted note for a warning, an error, a success or a tip."
+      },
+      "Progress": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "customValue": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "additionalProperties": false,
+        "description": "A single value against a maximum, drawn as a progress bar. Use `value` with a percentage `max` (default 100)."
+      },
+      "Code": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "additionalProperties": false,
+        "description": "A code or command block, shown verbatim in monospace. Use for short snippets only; Python programs belong in a marimo notebook instead."
+      },
+      "Table": {
+        "type": "object",
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            }
+          }
+        },
+        "required": [
+          "columns",
+          "rows"
+        ],
+        "additionalProperties": false,
+        "description": "Rows and columns of values, for comparisons and lists of records. `rows` are strings or numbers, in the same order as `columns`."
+      },
+      "Chart": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "area",
+              "bar",
+              "line",
+              "pie"
+            ]
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "values"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "categories",
+          "series"
+        ],
+        "additionalProperties": false,
+        "description": "An animated chart. `categories` are the x labels (or the slices of a pie) and each series holds one value per category, in the same order."
+      },
+      "Card": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Heading"
+                },
+                {
+                  "$ref": "#/$defs/Text"
+                },
+                {
+                  "$ref": "#/$defs/List"
+                },
+                {
+                  "$ref": "#/$defs/Metric"
+                },
+                {
+                  "$ref": "#/$defs/Badge"
+                },
+                {
+                  "$ref": "#/$defs/Callout"
+                },
+                {
+                  "$ref": "#/$defs/Progress"
+                },
+                {
+                  "$ref": "#/$defs/Code"
+                },
+                {
+                  "$ref": "#/$defs/Table"
+                },
+                {
+                  "$ref": "#/$defs/Chart"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "title",
+          "items"
+        ],
+        "additionalProperties": false,
+        "description": "A titled card that groups a few components of the answer together."
+      }
+    }
+  },
+  "id": "chat-app-ui"
+}

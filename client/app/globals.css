@@ -1,0 +1,163 @@
+@source "../node_modules/@cloudflare/kumo/dist/**/*.{js,jsx,ts,tsx}";
+@import "@cloudflare/kumo/styles/tailwind";
+@import "tailwindcss";
+
+/*
+ * Vendored components (shadcn/ui, Evil Charts) ship `dark:` utilities written
+ * for shadcn's class-based dark mode. This app's single source of truth is
+ * Kumo's `data-mode` attribute — next-themes drives it, and the frontend guide
+ * says to scope dark styling to that attribute rather than to `dark:`. Pointing
+ * the variant at `data-mode` keeps them in sync; left alone, Tailwind v4 would
+ * resolve `dark:` from `prefers-color-scheme` and the vendored components could
+ * disagree with the rest of the UI.
+ */
+@custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));
+
+/*
+ * Marimo previews render their own light canvas, so in dark mode invert the
+ * iframe back (hue-rotate preserves the original hues). Scoped to
+ * [data-mode="dark"] — the same attribute next-themes drives — instead of
+ * Tailwind's `dark:` variant, per the Kumo guide. Code views are unaffected:
+ * Shiki already ships dual light/dark themes.
+ */
+[data-mode="dark"] .marimo-frame {
+  filter: invert(100%) hue-rotate(180deg);
+}
+
+/*
+ * Notebook panel below the lg breakpoint: the panel is the full-screen view
+ * (mobile Chat/Notebook tabs own small screens). Kumo's resizable width is a
+ * pixel value stored once at mount, so after rotation, window resizes, or
+ * hydration from the SSR fallback the stale inline width either clips the
+ * header/iframe or leaves dead space to the right of the panel. Force both
+ * the rail and its inner container to full width when expanded. The
+ * collapsed icon rail and the desktop (lg+) resizable panel are unaffected.
+ * Scoped to [data-side="right"] so the dashboard nav sidebar is untouched.
+ */
+@media (max-width: 1023.98px) {
+  [data-sidebar-wrapper][data-side="right"] > aside[data-sidebar="sidebar"][data-state="expanded"] {
+    width: 100% !important;
+  }
+  [data-sidebar-wrapper][data-side="right"]
+    > aside[data-sidebar="sidebar"][data-state="expanded"]
+    [data-sidebar="content-container"] {
+    width: 100% !important;
+  }
+}
+
+/*
+ * Reveal-on-hover scrollbars, consistent across all browsers.
+ * Apply `.scrollbar-on-hover` to any horizontally/vertically scrollable
+ * container. By default the classic (non-overlay) scrollbar is drawn
+ * transparent so nothing shows; hovering the container (or focusing inside
+ * it) paints a thin thumb using the kumo line token, which adapts to
+ * light/dark via light-dark(). The track stays transparent so only the thumb
+ * is visible. Firefox honors scrollbar-width/scrollbar-color; WebKit/Blink
+ * (Chrome, Edge, Safari) use the -webkit-scrollbar pseudos.
+ */
+.scrollbar-on-hover {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.scrollbar-on-hover::-webkit-scrollbar {
+  width: 0.45rem;
+  height: 0.45rem;
+}
+.scrollbar-on-hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-on-hover::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 9999px;
+}
+.scrollbar-on-hover:hover,
+.scrollbar-on-hover:focus-within {
+  scrollbar-color: var(--color-kumo-line) transparent;
+}
+.scrollbar-on-hover:hover::-webkit-scrollbar-thumb,
+.scrollbar-on-hover:focus-within::-webkit-scrollbar-thumb {
+  background: var(--color-kumo-line);
+}
+
+/*
+ * shadcn/ui compatibility layer (Base UI, "base-lyra" style).
+ *
+ * Kumo stays the single source of truth for design: every shadcn semantic
+ * variable is an alias onto a Kumo token instead of a second palette, so
+ * shadcn components (and the Evil Charts components, which read
+ * `text-foreground` / `text-border` / `text-muted-foreground` /
+ * `text-background` off the live DOM) inherit the app theme.
+ *
+ * Dark mode needs no `.dark` block: Kumo repaints its own tokens under
+ * `[data-mode="dark"]`, the attribute next-themes drives, and these aliases
+ * are references, so they follow.
+ */
+:root {
+  --radius: 0.625rem;
+
+  --background: var(--color-kumo-canvas);
+  --foreground: var(--text-color-kumo-default);
+  --card: var(--color-kumo-base);
+  --card-foreground: var(--text-color-kumo-default);
+  --popover: var(--color-kumo-elevated);
+  --popover-foreground: var(--text-color-kumo-default);
+  --primary: var(--color-kumo-brand);
+  /* On-brand text, exactly as the frontend guide writes it: `bg-kumo-brand text-white`. */
+  --primary-foreground: #ffffff;
+  --secondary: var(--color-kumo-control);
+  --secondary-foreground: var(--text-color-kumo-default);
+  --muted: var(--color-kumo-recessed);
+  --muted-foreground: var(--text-color-kumo-subtle);
+  --accent: var(--color-kumo-tint);
+  --accent-foreground: var(--text-color-kumo-default);
+  --destructive: var(--color-kumo-danger);
+  /* Same pairing rule as primary for Kumo's danger fills. */
+  --destructive-foreground: #ffffff;
+  --border: var(--color-kumo-hairline);
+  --input: var(--color-kumo-line);
+  --ring: var(--color-kumo-focus);
+
+  /* Chart series palette: Kumo badge hues so generated charts stay on-brand. */
+  --chart-1: var(--color-kumo-badge-blue);
+  --chart-2: var(--color-kumo-badge-teal);
+  --chart-3: var(--color-kumo-badge-purple);
+  --chart-4: var(--color-kumo-badge-orange);
+  --chart-5: var(--color-kumo-badge-green);
+}
+
+/*
+ * `inline` keeps the utilities pointing straight at the aliases above, so
+ * `text-border` etc. resolve through Kumo at use time (required by Evil Charts'
+ * runtime token probe).
+ */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}

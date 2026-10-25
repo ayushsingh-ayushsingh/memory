@@ -1,0 +1,16 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - heading "Sign in to Flow" [level=1] [ref=e10]
+      - paragraph [ref=e11]: Continue with a connected account to access your workspace.
+    - generic [ref=e12]:
+      - button "Continue with GitHub" [ref=e13] [cursor=pointer]
+      - button "Continue with Google" [ref=e18] [cursor=pointer]
+    - paragraph [ref=e21]: Protected by secure session cookies. Only GitHub and Google accounts are accepted.
+  - button "Open Next.js Dev Tools" [ref=e27] [cursor=pointer]:
+    - generic [ref=e30]:
+      - text: Compiling
+      - generic [ref=e31]:
+        - generic [ref=e32]: .
+        - generic [ref=e33]: .
+        - generic [ref=e34]: .

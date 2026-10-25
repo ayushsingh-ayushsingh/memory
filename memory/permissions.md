@@ -1,0 +1,1 @@
+You are allowed to remove authentication from this project if you want to explore the dashboard and test it using playwright!

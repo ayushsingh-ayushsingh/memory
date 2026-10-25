@@ -1,0 +1,19 @@
+allowBuilds:
+  # OpenUI's postinstall is telemetry-only ("Telemetry must never fail
+  # installation"), so deny it like sharp/unrs-resolver.
+  "@openuidev/lang-core": false
+  better-sqlite3: true
+  esbuild: true
+  sharp: false
+  unrs-resolver: false
+  workerd: true
+catalog:
+  vite: npm:@voidzero-dev/vite-plus-core@1.3.0
+  vite-plus: 1.3.0
+overrides:
+  vite@*: "catalog:"
+peerDependencyRules:
+  allowAny:
+    - vite
+  allowedVersions:
+    vite: "*"

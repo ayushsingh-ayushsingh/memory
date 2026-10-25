@@ -1,0 +1,24 @@
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# environment & secrets
+.env
+
+# docker runtime data
+qdrant_storage/
+qdrant_data/
+searxng/
+
+# local dev
+node_modules/
+
+# sqlite runtime data (persisted auth + chat history lives here, never commit)
+data/*.db
+data/*.db-wal
+data/*.db-shm
+!data/.gitkeep

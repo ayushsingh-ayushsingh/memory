@@ -1,0 +1,61 @@
+[project]
+name = "chat-app"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "cryptography>=44.0.0",
+    "falkordb>=1.8.0",
+    "fastapi>=0.141.1",
+    "firecrawl>=4.40.0",
+    "firecrawl-py>=4.40.0",
+    "graphiti-core[groq]>=0.31.2",
+    "groq>=1.7.0",
+    "httpx>=0.28.1",
+    "lzstring>=1.0.4",
+    "marimo>=0.25.1",
+    "pydantic>=2.13.4",
+    "pydantic-ai>=2.35.0",
+    "pydantic-ai-harness[skills]>=0.27.0",
+    "pydantic-ai-slim[groq]>=2.55.0",
+    "pyjwt[crypto]>=2.10.0",
+    "python-dotenv>=1.2.3",
+    "python-toon>=0.1.3",
+    # NOTE: `qdrant-client[fastembed]` pins `fastembed>=0.8,<0.9`, which conflicts
+    # with our direct `fastembed>=0.9.0` requirement and breaks `uv sync`. The extra
+    # only enables *local* on-disk inference inside qdrant-client; this project never
+    # uses it (we always pass `QdrantClient(url=...)` and let the Qdrant server do
+    # FastEmbedCloud inference), so we depend on `fastembed` directly instead.
+    "qdrant-client>=1.19.1,<2.0.0",
+    "requests>=2.34.2",
+    "sqlalchemy>=2.0.52",
+    "rdflib>=7.0.0",
+    "pyshacl>=0.25.0",
+    "owlrl>=6.0.2",
+    "fastembed>=0.9.0",
+    "typesafe-sdk>=0.7.5",
+    "pandas>=3.0.6",
+    "pydantic-settings>=2.7",
+    "ipython>=9.17.1",
+    "pyvis>=0.3.2",
+    # --- long-context chunking (backend/dul_graph_rag/modules/chunking.py) ---
+    # fastcoref needs torch; the CPU wheel index keeps ~5 GB of unused CUDA
+    # libraries out of the environment (see [tool.uv.sources] below).
+    "torch>=2.5",
+    "fastcoref>=2.1.6",
+    # spaCy links anaphoric demonstratives ("that", "this") that fastcoref
+    # leaves unresolved; `en_core_web_sm` supplies the tagger + parser it needs.
+    "spacy>=3.8,<4.0",
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+]
+
+# torch comes from the CPU-only index: fastcoref runs on `device="cpu"` and the
+# default PyPI wheel would drag in the whole nvidia-* CUDA toolchain.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]

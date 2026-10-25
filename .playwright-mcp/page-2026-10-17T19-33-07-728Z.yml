@@ -1,0 +1,102 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]
+  - alert [ref=e11]
+  - generic [ref=e12]:
+    - complementary [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - list [ref=e17]:
+            - listitem [ref=e18]:
+              - button "Flow" [ref=e19] [cursor=pointer]
+          - generic [ref=e27]:
+            - list [ref=e29]:
+              - listitem [ref=e30]:
+                - button "Home" [ref=e31] [cursor=pointer]
+            - generic [ref=e35]:
+              - generic [ref=e36]: AI
+              - list [ref=e38]:
+                - list [ref=e40]:
+                  - listitem [ref=e41]:
+                    - generic [ref=e42]:
+                      - button "Joy Chat" [expanded] [ref=e43] [cursor=pointer]
+                      - list [ref=e47]:
+                        - listitem [ref=e49]:
+                          - button [ref=e50] [cursor=pointer]:
+                            - generic [ref=e51]: New chat
+                        - listitem [ref=e54]:
+                          - textbox [ref=e56]:
+                            - /placeholder: Search chats
+                        - listitem [ref=e142]:
+                          - button [ref=e144] [cursor=pointer]
+                        - listitem [ref=e57]:
+                          - button [ref=e59] [cursor=pointer]
+                        - listitem [ref=e60]:
+                          - button [ref=e62] [cursor=pointer]
+                        - listitem [ref=e63]:
+                          - button [ref=e65] [cursor=pointer]
+                        - listitem [ref=e66]:
+                          - button [ref=e68] [cursor=pointer]
+                        - listitem [ref=e69]:
+                          - button [ref=e71] [cursor=pointer]
+            - list [ref=e73]:
+              - listitem [ref=e74]:
+                - generic [ref=e75]:
+                  - button "Notebooks" [ref=e76] [cursor=pointer]
+                  - list [ref=e80]:
+                    - listitem [ref=e82]:
+                      - textbox [ref=e84]:
+                        - /placeholder: Search notebooks
+                    - listitem [ref=e85]:
+                      - button [ref=e87] [cursor=pointer]
+                    - listitem [ref=e88]:
+                      - button [ref=e90] [cursor=pointer]
+                    - listitem [ref=e91]:
+                      - button [ref=e93] [cursor=pointer]
+                    - listitem [ref=e94]:
+                      - button [ref=e96] [cursor=pointer]
+            - generic [ref=e97]:
+              - generic [ref=e98]: Build
+              - list [ref=e100]:
+                - listitem [ref=e101]:
+                  - generic [ref=e102]:
+                    - button "Compute" [expanded] [ref=e103] [cursor=pointer]
+                    - list [ref=e107]:
+                      - listitem [ref=e109]:
+                        - button [ref=e110] [cursor=pointer]
+        - button "Expand sidebar" [ref=e112] [cursor=pointer]
+    - generic [ref=e115]:
+      - banner [ref=e116]:
+        - navigation "breadcrumb" [ref=e117]:
+          - generic [ref=e118]:
+            - link "Dashboard" [ref=e145] [cursor=pointer]:
+              - /url: /dashboard
+            - generic [ref=e150]: New chat
+        - 'button "Account: ayushpno@gmail.com" [ref=e122] [cursor=pointer]'
+      - main [ref=e152]:
+        - generic [ref=e154]:
+          - log "Chat messages" [ref=e155]:
+            - generic [ref=e158]:
+              - button [aria-hidden]
+          - generic [ref=e161]:
+            - textbox "Ask anything" [ref=e162]
+            - generic [ref=e163]:
+              - generic [ref=e164]:
+                - button "Add a new action" [ref=e166] [cursor=pointer]
+                - button "More actions" [ref=e170] [cursor=pointer]
+              - generic [ref=e173]:
+                - button "Voice input" [ref=e175] [cursor=pointer]
+                - button "Send message" [disabled] [ref=e179]
+  - generic:
+    - region "Notifications"
+  - generic:
+    - button "Open OpenUI Inspect" [ref=e185] [cursor=pointer]
+    - option "LLM-like" [selected]
+    - option "24 chars"
+    - option "Per line"
+    - option "Per char"
+    - option "0.25×"
+    - option "0.5×"
+    - option "1×" [selected]
+    - option "2×"
+    - option "4×"
+    - option "8×"

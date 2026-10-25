@@ -1,0 +1,128 @@
+{
+  "symmetric": [
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#coparticipatesWith",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#farFrom",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasCommonBoundary",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isRelatedToConcept",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isRelatedToDescription",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#nearTo",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#overlaps",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#sameSettingAs"
+  ],
+  "transitive": [
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#associatedWith",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#follows",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasPart",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasProperPart",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isPartOf",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isPropertPartOf",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isSpecializedBy",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#precedes",
+    "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#specializes"
+  ],
+  "detail": [
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#associatedWith",
+      "characteristics": [
+        "Transitive"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#coparticipatesWith",
+      "characteristics": [
+        "Symmetric"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#farFrom",
+      "characteristics": [
+        "Symmetric"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#follows",
+      "characteristics": [
+        "Transitive"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasCommonBoundary",
+      "characteristics": [
+        "Symmetric"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasPart",
+      "characteristics": [
+        "Transitive"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#hasProperPart",
+      "characteristics": [
+        "Transitive"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isPartOf",
+      "characteristics": [
+        "Transitive"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isPropertPartOf",
+      "characteristics": [
+        "Transitive"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isRelatedToConcept",
+      "characteristics": [
+        "Symmetric"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isRelatedToDescription",
+      "characteristics": [
+        "Symmetric"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#isSpecializedBy",
+      "characteristics": [
+        "Transitive"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#nearTo",
+      "characteristics": [
+        "Symmetric"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#overlaps",
+      "characteristics": [
+        "Symmetric"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#precedes",
+      "characteristics": [
+        "Transitive"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#sameSettingAs",
+      "characteristics": [
+        "Symmetric"
+      ]
+    },
+    {
+      "property": "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#specializes",
+      "characteristics": [
+        "Transitive"
+      ]
+    }
+  ],
+  "source": "neo4j readonly n10s n4sch__propCharacteristics"
+}

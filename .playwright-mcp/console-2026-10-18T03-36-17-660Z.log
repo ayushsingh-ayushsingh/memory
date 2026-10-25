@@ -1,0 +1,30 @@
+[     302ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
+[     339ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
+[  153643ms] Error: Base UI: MenuGroupContext is missing. Menu group parts must be used within <Menu.Group> or <Menu.RadioGroup>.
+    at useMenuGroupRootContext (http://localhost:3000/_next/static/chunks/0_gn_%40cloudflare_kumo_dist_chunks_MenuSubmenuTrigger-fzubf5xr7ohsgsi7_1z-pdxu.js:420:35)
+    at MenuGroupLabel (http://localhost:3000/_next/static/chunks/0_gn_%40cloudflare_kumo_dist_chunks_MenuSubmenuTrigger-fzubf5xr7ohsgsi7_1z-pdxu.js:457:24)
+    at Object.react_stack_bottom_frame (http://localhost:3000/_next/static/chunks/1hkm_next_dist_compiled_react-dom_1p9bboh._.js:14894:24)
+    at renderWithHooks (http://localhost:3000/_next/static/chunks/1hkm_next_dist_compiled_react-dom_1p9bboh._.js:4425:24)
+    at updateForwardRef (http://localhost:3000/_next/static/chunks/1hkm_next_dist_compiled_react-dom_1p9bboh._.js:5717:21)
+    at beginWork (http://localhost:3000/_next/static/chunks/1hkm_next_dist_compiled_react-dom_1p9bboh._.js:6593:24)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/1hkm_next_dist_compiled_react-dom_1p9bboh._.js:761:74)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/1hkm_next_dist_compiled_react-dom_1p9bboh._.js:9385:97)
+    at workLoopSync (http://localhost:3000/_next/static/chunks/1hkm_next_dist_compiled_react-dom_1p9bboh._.js:9279:40)
+    at renderRootSync (http://localhost:3000/_next/static/chunks/1hkm_next_dist_compiled_react-dom_1p9bboh._.js:9263:13)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/1hkm_next_dist_compiled_react-dom_1p9bboh._.js:8928:47)
+    at performSyncWorkOnRoot (http://localhost:3000/_next/static/chunks/1hkm_next_dist_compiled_react-dom_1p9bboh._.js:10093:9)
+    at flushSyncWorkAcrossRoots_impl (http://localhost:3000/_next/static/chunks/1hkm_next_dist_compiled_react-dom_1p9bboh._.js:10009:316)
+    at processRootScheduleInMicrotask (http://localhost:3000/_next/static/chunks/1hkm_next_dist_compiled_react-dom_1p9bboh._.js:10030:106)
+    at http://localhost:3000/_next/static/chunks/1hkm_next_dist_compiled_react-dom_1p9bboh._.js:10104:158
+[  267448ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
+[  267457ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
+[  267475ms] [LOG] [Fast Refresh] done in 32ms @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
+[  267548ms] [LOG] [Fast Refresh] done in 32ms @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
+[  267609ms] [LOG] [Fast Refresh] done in 32ms @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
+[  267691ms] [LOG] [Fast Refresh] done in 32ms @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
+[  267843ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
+[  267881ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
+[  289545ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
+[  289587ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
+[  345113ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
+[  345145ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/1hkm_next_dist_0h8c2q-._.js:776
