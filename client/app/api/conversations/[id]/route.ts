@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, asc, eq } from "drizzle-orm";
-import { getDb } from "@/db";
-import { conversation, message } from "@/db/schema";
+import { backendFetch, backendJson } from "@/lib/backend";
 import { getServerSession } from "@/lib/session";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -10,13 +8,16 @@ function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
-async function ownedConversation(userId: string, id: string) {
-  const rows = await getDb()
-    .select()
-    .from(conversation)
-    .where(and(eq(conversation.id, id), eq(conversation.userId, userId)))
-    .limit(1);
-  return rows[0] ?? null;
+interface BackendMessage {
+  id: string;
+  role: string;
+  content: string;
+  createdAt?: string;
+}
+
+interface BackendConversationDetail {
+  conversation: { id: string; title: string; updatedAt?: string };
+  messages: BackendMessage[];
 }
 
 // GET /api/conversations/[id] — conversation with its messages.
@@ -25,73 +26,60 @@ export async function GET(_request: Request, context: RouteContext) {
   if (!session) return unauthorized();
 
   const { id } = await context.params;
-  const convo = await ownedConversation(session.user.id, id);
-  if (!convo) {
+  const data = await backendJson<BackendConversationDetail | null>(
+    `/conversations/${encodeURIComponent(id)}`,
+    {},
+    null,
+  );
+  if (!data) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const messages = await getDb()
-    .select({
-      id: message.id,
-      role: message.role,
-      content: message.content,
-      createdAt: message.createdAt,
-    })
-    .from(message)
-    .where(eq(message.conversationId, id))
-    .orderBy(asc(message.createdAt));
-
   return NextResponse.json({
-    id: convo.id,
-    title: convo.title,
-    messages,
+    id: data.conversation.id,
+    title: data.conversation.title,
+    messages: data.messages,
   });
 }
 
 // PATCH /api/conversations/[id] — rename an owned conversation.
-// The URL stays stable (/dashboard/chat/<id>); only the display name changes,
-// so duplicate titles are fine.
 export async function PATCH(request: Request, context: RouteContext) {
   const session = await getServerSession();
   if (!session) return unauthorized();
 
   const { id } = await context.params;
-  const convo = await ownedConversation(session.user.id, id);
-  if (!convo) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
-  const body = (await request.json().catch(() => ({}))) as {
-    title?: unknown;
-  };
+  const body = (await request.json().catch(() => ({}))) as { title?: unknown };
   if (typeof body.title !== "string" || body.title.trim().length === 0) {
     return NextResponse.json({ error: "Missing title" }, { status: 400 });
   }
-
   const title = body.title.trim().slice(0, 120);
 
-  await getDb()
-    .update(conversation)
-    .set({ title, updatedAt: new Date() })
-    .where(eq(conversation.id, id));
+  const response = await backendFetch(`/conversations/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ title }),
+  });
+  if (!response || !response.ok) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
+  // The chat store reconciles its optimistic title with `title` in the response.
   return NextResponse.json({ updated: true, id, title });
 }
 
-// DELETE /api/conversations/[id] — delete one owned conversation.
-export async function DELETE(_request: Request, context: RouteContext) {
+// DELETE /api/conversations/[id]?forgetMemory=true — delete one owned
+// conversation, optionally also forgetting what the agent learned from it.
+export async function DELETE(request: Request, context: RouteContext) {
   const session = await getServerSession();
   if (!session) return unauthorized();
 
   const { id } = await context.params;
-  const convo = await ownedConversation(session.user.id, id);
-  if (!convo) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  const forgetMemory =
+    new URL(request.url).searchParams.get("forgetMemory") === "true";
 
-  await getDb()
-    .delete(conversation)
-    .where(and(eq(conversation.id, id), eq(conversation.userId, session.user.id)));
-
-  return NextResponse.json({ deleted: true });
+  const response = await backendFetch(
+    `/conversations/${encodeURIComponent(id)}?forget_memory=${forgetMemory}`,
+    { method: "DELETE" },
+  );
+  if (!response) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  return NextResponse.json({ deleted: response.ok });
 }

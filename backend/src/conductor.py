@@ -5,10 +5,21 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from groq import AsyncGroq
+from pydantic import BaseModel, ConfigDict
 from pydantic_ai import Agent
 from pydantic_ai.models.groq import GroqModel
 from pydantic_ai.providers.groq import GroqProvider
+from pydantic_ai.tools import RunContext
 
+from .memory import (
+    bulk_create_facts,
+    create_fact,
+    delete_fact as delete_fact_memory,
+    bulk_delete_facts as bulk_delete_facts_memory,
+    list_facts,
+    update_fact as update_fact_memory,
+)
+from .toon_utils import toon
 from .tools.search import (
     DEFAULT_LIMIT,
     SearchError,
@@ -190,30 +201,215 @@ model = GroqModel(
     # than leaving the user staring at a spinner.
     provider=GroqProvider(groq_client=AsyncGroq(max_retries=0)),
 )
+
+
+class ChatDeps(BaseModel):
+    """Per-run context. `user_id` scopes every memory tool to one user."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: str
+    user_name: str = "the user"
+
+
 conductor_agent = Agent(
     model,
     name="conductor",
     instructions=INSTRUCTIONS,
     capabilities=_capabilities,
+    deps_type=ChatDeps,
 )
 
 
-@conductor_agent.tool_plain
-def search(query: str, number: int = DEFAULT_LIMIT) -> list[dict[str, str]] | str:
+@conductor_agent.instructions
+def current_identity(ctx: RunContext[ChatDeps]) -> str:
+    """State the user's live name so replies use it, not stale memory.
+
+    Extracted context can hold older names (the user may have renamed their
+    profile since those facts were stored); the JWT name is always current.
     """
-    Get web-search results
+    name = ctx.deps.user_name.strip()
+    if not name or name == "the user":
+        return ""
+    return (
+        f"\n\n# Current user identity\n"
+        f"The user's name is {name}. Always address them by this name, even if "
+        f"older retrieved context or history shows a different name.\n"
+    )
+
+
+@conductor_agent.tool_plain
+def search(query: str, number: int = DEFAULT_LIMIT) -> str:
+    """
+    Get web-search results, encoded as TOON (dates in natural format).
     Args:
         query: str
         number: optional
-    Retuns:
-        [{url, title, content}]
+    Returns:
+        TOON block of hits: `hits[N]{url,title,content}:`
     """
     try:
-        return search_tool(query, number)
+        results = search_tool(query, number)
     except (SearchError, ValueError, TypeError) as exc:
         # Never fail the whole run when the search service is down:
         # let the model answer from its own knowledge instead.
         return f"Web search is temporarily unavailable ({exc}). Answer from your own knowledge and say so briefly."
+    return toon({"hits": results}) if results else "No web results found."
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Memory CRUD tools (scoped to the current user's DUL group)
+# ─────────────────────────────────────────────────────────────────────────────
+# Every tool reads `ctx.deps.user_id` and derives the isolation group from it,
+# so an agent can only ever read/write its own user's facts. `fact_key` is the
+# id the model passes back for soft-update / soft-delete.
+
+
+def _tool_error(exc: Exception) -> str:
+    """Turn a memory failure into a short string the model can act on."""
+    detail = getattr(exc, "detail", None)
+    return f"Memory operation failed: {detail or exc}"
+
+
+@conductor_agent.tool
+async def remember_fact(
+    ctx: RunContext[ChatDeps],
+    subject_name: str,
+    relation: str,
+    object_name: str,
+    subject_class: str | None = None,
+    object_class: str | None = None,
+    relation_name: str = "",
+    fact_sentence: str = "",
+) -> str:
+    """Store one durable fact about the user (create). Returns the fact id.
+
+    Args:
+        subject_name: first entity (e.g. the user's name or a thing they mention)
+        relation: DUL object property short name (e.g. "hasLocation", "isLocatedIn")
+        object_name: second entity the subject relates to
+        subject_class: optional DUL class short name for the subject
+        object_class: optional DUL class short name for the object
+        relation_name: optional human label for the relation
+        fact_sentence: optional readable sentence stating the fact
+    """
+    try:
+        report = await create_fact(
+            ctx.deps.user_id,
+            subject_name=subject_name,
+            relation=relation,
+            object_name=object_name,
+            subject_class=subject_class or None,
+            object_class=object_class or None,
+            relation_name=relation_name,
+            fact_sentence=fact_sentence,
+        )
+        return toon(report)
+    except Exception as exc:  # noqa: BLE001
+        return _tool_error(exc)
+
+
+@conductor_agent.tool
+async def remember_facts(
+    ctx: RunContext[ChatDeps], triples: list[dict[str, str]]
+) -> str:
+    """Store many durable facts at once (bulk create).
+
+    Args:
+        triples: list of dicts, each with subject_name, relation, object_name
+            (optional: subject_class, object_class, relation_name, fact_sentence)
+    """
+    try:
+        report = await bulk_create_facts(ctx.deps.user_id, triples)
+        return toon(report)
+    except Exception as exc:  # noqa: BLE001
+        return _tool_error(exc)
+
+
+@conductor_agent.tool
+async def update_fact(
+    ctx: RunContext[ChatDeps],
+    subject_name: str,
+    relation: str,
+    object_name: str,
+    subject_class: str | None = None,
+    object_class: str | None = None,
+    relation_name: str = "",
+    fact_sentence: str = "",
+    supersedes: list[str] | None = None,
+) -> str:
+    """Correct a fact (soft-update). Supersedes the old value, keeps history.
+
+    Args:
+        subject_name: first entity
+        relation: DUL object property short name
+        object_name: the new object value
+        subject_class: optional DUL class short name for the subject
+        object_class: optional DUL class short name for the object
+        relation_name: optional human label for the relation
+        fact_sentence: optional readable sentence stating the fact
+        supersedes: optional extra fact ids to soft-replace
+    """
+    try:
+        report = await update_fact_memory(
+            ctx.deps.user_id,
+            subject_name=subject_name,
+            relation=relation,
+            object_name=object_name,
+            subject_class=subject_class or None,
+            object_class=object_class or None,
+            relation_name=relation_name,
+            fact_sentence=fact_sentence,
+            supersedes=supersedes,
+        )
+        return toon(report)
+    except Exception as exc:  # noqa: BLE001
+        return _tool_error(exc)
+
+
+@conductor_agent.tool
+async def forget_fact(ctx: RunContext[ChatDeps], fact_key: str) -> str:
+    """Forget one fact by its id (soft-delete). Use `recall_facts` to find ids.
+
+    Args:
+        fact_key: the id returned when the fact was stored
+    """
+    try:
+        report = await delete_fact_memory(ctx.deps.user_id, fact_key)
+        return toon(report)
+    except Exception as exc:  # noqa: BLE001
+        return _tool_error(exc)
+
+
+@conductor_agent.tool
+async def forget_facts(ctx: RunContext[ChatDeps], fact_keys: list[str]) -> str:
+    """Forget many facts by their ids (bulk soft-delete).
+
+    Args:
+        fact_keys: list of fact ids to forget
+    """
+    try:
+        report = await bulk_delete_facts_memory(ctx.deps.user_id, fact_keys)
+        return toon(report)
+    except Exception as exc:  # noqa: BLE001
+        return _tool_error(exc)
+
+
+@conductor_agent.tool
+async def recall_facts(
+    ctx: RunContext[ChatDeps], query: str, limit: int = 20
+) -> str:
+    """Search the user's stored facts. Returns TOON with fact ids for edits.
+
+    Args:
+        query: what to look for
+        limit: max facts to return (default 20)
+    """
+    try:
+        hits = await list_facts(ctx.deps.user_id, query, limit=limit)
+        return toon({"facts": hits}) if hits else "No matching facts."
+    except Exception as exc:  # noqa: BLE001
+        return _tool_error(exc)
 
 
 app = conductor_agent.to_web()

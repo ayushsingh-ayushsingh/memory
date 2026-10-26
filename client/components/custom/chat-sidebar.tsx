@@ -1,6 +1,12 @@
 "use client";
 
-import { Button, Input, Sidebar, useKumoToastManager } from "@cloudflare/kumo";
+import {
+  Button,
+  Dialog,
+  Input,
+  Sidebar,
+  useKumoToastManager,
+} from "@cloudflare/kumo";
 import {
   ChatIcon,
   CheckIcon,
@@ -16,10 +22,20 @@ import { useChatStore } from "@/lib/chat-store";
 /** Extract the chat id from a dashboard pathname, if present. */
 function idFromPathname(pathname: string | null): string | undefined {
   const segments = (pathname ?? "").split("/").filter(Boolean);
-  return segments[0] === "dashboard" && segments[1] === "chat" ? segments[2] : undefined;
+  return segments[0] === "dashboard" && segments[1] === "chat"
+    ? segments[2]
+    : undefined;
 }
 
-function ConversationRow({ id, title, active }: { id: string; title: string; active: boolean }) {
+function ConversationRow({
+  id,
+  title,
+  active,
+}: {
+  id: string;
+  title: string;
+  active: boolean;
+}) {
   const router = useRouter();
   const toastManager = useKumoToastManager();
   const renameConversation = useChatStore((state) => state.renameConversation);
@@ -64,9 +80,9 @@ function ConversationRow({ id, title, active }: { id: string; title: string; act
     // sidebar and breadcrumbs pick up the new name from the store.
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = async (forgetMemory: boolean) => {
     setBusy(true);
-    const ok = await deleteConversation(id);
+    const ok = await deleteConversation(id, forgetMemory);
     setBusy(false);
     setConfirmingDelete(false);
     if (!ok) {
@@ -130,83 +146,88 @@ function ConversationRow({ id, title, active }: { id: string; title: string; act
     );
   }
 
-  if (confirmingDelete) {
-    return (
-      <Sidebar.MenuSubItem>
-        <div className="flex items-center gap-1 px-1 py-0.5">
-          <span className="flex-1 truncate text-sm text-kumo-danger">Delete “{title}”?</span>
-          <Button
-            variant="outline"
-            size="sm"
-            shape="square"
-            icon={CheckIcon}
-            aria-label={`Confirm delete ${title}`}
-            title="Confirm delete"
-            disabled={busy}
-            onClick={() => void confirmDelete()}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            shape="square"
-            icon={XIcon}
-            aria-label="Cancel delete"
-            title="Cancel"
-            disabled={busy}
-            onClick={() => setConfirmingDelete(false)}
-          />
+  return (
+    <>
+      <Sidebar.MenuSubItem className="hover:border-kumo-hairline border border-transparent rounded-lg hover:bg-kumo-fill-hover">
+        <div className="group flex items-center gap-1 pr-1">
+          <Sidebar.MenuSubButton
+            active={active}
+            onClick={open}
+            title={title}
+            className="min-w-0 flex-1"
+          >
+            <span className="block truncate">{title}</span>
+          </Sidebar.MenuSubButton>
+          <span className="hidden shrink-0 group-hover:inline-flex group-focus-within:inline-flex gap-1">
+            <Button
+              variant="outline"
+              shape="square"
+              size="sm"
+              icon={PencilSimpleIcon}
+              aria-label={`Rename ${title}`}
+              title="Rename"
+              onClick={() => {
+                setDraft(title);
+                setEditing(true);
+              }}
+            />
+            <Button
+              variant="secondary-destructive"
+              size="sm"
+              shape="square"
+              icon={TrashIcon}
+              aria-label={`Delete ${title}`}
+              title="Delete"
+              onClick={() => setConfirmingDelete(true)}
+            />
+          </span>
         </div>
       </Sidebar.MenuSubItem>
-    );
-  }
 
-  return (
-    <Sidebar.MenuSubItem className="hover:border-kumo-hairline border border-transparent rounded-lg hover:bg-kumo-fill-hover">
-      <div className="group flex items-center gap-1 pr-1">
-        <Sidebar.MenuSubButton
-          active={active}
-          onClick={open}
-          title={title}
-          className="min-w-0 flex-1"
-        >
-          <span className="block truncate">{title}</span>
-        </Sidebar.MenuSubButton>
-        <span className="hidden shrink-0 group-hover:inline-flex group-focus-within:inline-flex gap-1">
-          <Button
-            variant="outline"
-            shape="square"
-            size="sm"
-            icon={PencilSimpleIcon}
-            aria-label={`Rename ${title}`}
-            title="Rename"
-            onClick={() => {
-              setDraft(title);
-              setEditing(true);
-            }}
-          />
-          <Button
-            variant="secondary-destructive"
-            size="sm"
-            shape="square"
-            icon={TrashIcon}
-            aria-label={`Delete ${title}`}
-            title="Delete"
-            onClick={() => setConfirmingDelete(true)}
-          />
-        </span>
-      </div>
-    </Sidebar.MenuSubItem>
+      <Dialog.Root open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+        <Dialog className="p-6">
+          <Dialog.Title className="text-lg font-semibold">
+            Delete this chat?
+          </Dialog.Title>
+          <Dialog.Description className="mt-1.5 text-sm text-kumo-subtle">
+            Do you want to delete only this chat? Or do you also want to erase
+            what the assistant learned from this chat?
+          </Dialog.Description>
+          <div className="mt-8 flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={() => setConfirmingDelete(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="secondary-destructive"
+              disabled={busy}
+              onClick={() => void confirmDelete(false)}
+            >
+              Delete chat
+            </Button>
+            <Button
+              variant="destructive"
+              loading={busy}
+              disabled={busy}
+              onClick={() => void confirmDelete(true)}
+            >
+              Erase Memory
+            </Button>
+          </div>
+        </Dialog>
+      </Dialog.Root>
+    </>
   );
 }
 
 export function ChatSidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const toastManager = useKumoToastManager();
   const conversations = useChatStore((state) => state.conversations);
   const fetchConversations = useChatStore((state) => state.fetchConversations);
-  const createConversation = useChatStore((state) => state.createConversation);
-  const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -220,23 +241,17 @@ export function ChatSidebar() {
     needle.length === 0
       ? conversations
       : conversations.filter((conversationItem) =>
-          needle.split(/\s+/).every((word) => conversationItem.title.toLowerCase().includes(word)),
+          needle
+            .split(/\s+/)
+            .every((word) =>
+              conversationItem.title.toLowerCase().includes(word),
+            ),
         );
 
-  const handleNewChat = async () => {
-    if (creating) return;
-    setCreating(true);
-    const created = await createConversation();
-    setCreating(false);
-    if (!created) {
-      toastManager.add({
-        title: "Could not create chat",
-        description: "Please try again.",
-        variant: "error",
-      });
-      return;
-    }
-    router.push(`/dashboard/chat/${created.id}`);
+  // New chats start on /dashboard with no id in the URL; the backend mints
+  // the conversation when the user asks the first question.
+  const handleNewChat = () => {
+    router.push("/dashboard");
   };
 
   return (
@@ -270,7 +285,7 @@ export function ChatSidebar() {
                       onChange={(event) => setQuery(event.target.value)}
                       placeholder="Search chats"
                       aria-label="Search chats"
-                      className="h-8 min-w-0 flex-1 text-sm"
+                      className="h-8 min-w-0 flex-1 text-sm rounded-md"
                     />
                     {query && (
                       <Button

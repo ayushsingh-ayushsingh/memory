@@ -16,7 +16,7 @@ import {
   PromptInputTextarea,
 } from "@/components/prompt-kit/prompt-input";
 import { ScrollButton } from "@/components/prompt-kit/scroll-button";
-import { Button, LayerCard, Sidebar, useKumoToastManager } from "@cloudflare/kumo";
+import { Button, LayerCard, Loader, Sidebar, useKumoToastManager } from "@cloudflare/kumo";
 import { cn } from "@/lib/utils";
 import {
   ArrowUpIcon,
@@ -31,7 +31,6 @@ import {
 } from "@phosphor-icons/react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getBackendToken } from "@/lib/auth-client";
-import { useChatStore } from "@/lib/chat-store";
 import { useNotebookStore, type NotebookRecord } from "@/lib/notebook-store";
 import { CodeBlockProvider } from "@/components/prompt-kit/code-block";
 import { MarimoArtifactPanel } from "@/components/custom/marimo-artifact";
@@ -248,50 +247,75 @@ const ChatMessageRow = memo(function ChatMessageRow({
  * not in a duplicate in-page header.
  */
 export function ChatTranscript({
-  conversationId,
+  conversationId: initialConversationId,
   initialMessages,
+  onConversationCreated,
 }: {
-  conversationId: string;
+  conversationId?: string | null;
   initialMessages: PersistedChatMessage[];
+  /** Called with the id the backend mints for a brand-new chat. */
+  onConversationCreated?: (id: string) => void;
 }) {
   const [prompt, setPrompt] = useState("");
   const toastManager = useKumoToastManager();
-  const renameConversation = useChatStore((state) => state.renameConversation);
 
-  // Stable identity so the memoized rows below never re-render because of it.
-  const persistMessage = useCallback(
-    async (role: "user" | "assistant", content: string) => {
-      try {
-        await fetch(`/api/conversations/${conversationId}/messages`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ role, content }),
-        });
-      } catch (error) {
-        console.error("Failed to persist message:", error);
-      }
-    },
-    [conversationId],
+  // The backend returns the minted conversation id in the `X-Conversation-Id`
+  // response header on the first message of a new chat; capture it here so the
+  // page can put it in the URL once the turn finishes.
+  const createdConversationIdRef = useRef<string | null>(null);
+
+  // The backend owns history + persistence: each request carries only the
+  // conversation id and the newest user message — never the full transcript.
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: `${backendUrl}/chat`,
+        fetch: async (input, init) => {
+          const response = await authenticatedFetch(input, init);
+          const minted = response.headers.get("X-Conversation-Id");
+          if (minted) {
+            createdConversationIdRef.current = minted;
+          }
+          return response;
+        },
+        prepareSendMessagesRequest: ({ id, messages, trigger }) => {
+          const lastUserMessage = [...messages]
+            .reverse()
+            .find((message) => message.role === "user");
+          return {
+            body: {
+              id: initialConversationId ?? id ?? "new",
+              trigger,
+              messages: lastUserMessage ? [lastUserMessage] : [],
+            },
+          };
+        },
+      }),
+    [initialConversationId],
   );
 
+  // Surface the minted id on ANY outcome (finish, abort, error): the backend
+  // creates the conversation before the model runs, so even a rate-limited
+  // turn leaves a real chat the user should land on and retry in — instead of
+  // stranding them on /dashboard while orphan rows pile up.
+  const surfaceMintedId = useCallback(() => {
+    const minted = createdConversationIdRef.current;
+    if (!initialConversationId && minted) {
+      onConversationCreated?.(minted);
+    }
+  }, [initialConversationId, onConversationCreated]);
+
   const { messages, sendMessage, status, stop, setMessages } = useChat({
-    id: conversationId,
+    id: initialConversationId ?? "new",
     messages: initialMessages.map(toUIMessage),
     // Coalesce the SSE firehose: without this, every model chunk (hundreds
     // per second on fast backends) triggers a full transcript re-render —
     // markdown re-lex, block diff, Shiki highlight — which janks the UI and
     // starves scroll input. 50ms still looks instant to the eye.
     throttle: 50,
-    transport: new DefaultChatTransport({
-      api: `${backendUrl}/chat`,
-      fetch: authenticatedFetch,
-    }),
-    onFinish: ({ message, isAbort, isError }) => {
-      if (isAbort || isError) return;
-      const text = getMessageText(message);
-      if (text) {
-        void persistMessage("assistant", text);
-      }
+    transport,
+    onFinish: () => {
+      surfaceMintedId();
     },
     onError: (error) => {
       console.error("Chat request failed:", error);
@@ -300,8 +324,14 @@ export function ChatTranscript({
         description: error.message || "The backend rejected the request. Sign in again?",
         variant: "error",
       });
+      surfaceMintedId();
     },
   });
+
+  // Stable alias of the prop for the rest of the component (notebook sync
+  // below). Null for a brand-new chat on /dashboard until the backend mints an
+  // id and the page navigates to /dashboard/chat/<id>.
+  const conversationId = initialConversationId;
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -319,15 +349,8 @@ export function ChatTranscript({
 
     setPrompt("");
 
-    const isFirstMessage = messages.length === 0;
-    void persistMessage("user", text);
-    if (isFirstMessage) {
-      // Name the chat after its first message. The URL carries the stable
-      // id, so no navigation is needed — sidebar and breadcrumbs update
-      // from the store.
-      void renameConversation(conversationId, text.length > 60 ? `${text.slice(0, 60)}…` : text);
-    }
-
+    // The backend persists both sides of the turn and titles the conversation
+    // from the first message; the client only needs to send the new prompt.
     try {
       await sendMessage({
         text,
@@ -421,13 +444,12 @@ export function ChatTranscript({
   );
 
   // A generated interface can send a follow-up turn (`@ToAssistant(...)`); the
-  // click becomes an ordinary user message, persisted like a typed one.
+  // click becomes an ordinary user message. The backend persists it.
   const handleContinueConversation = useCallback(
     (message: string) => {
       const text = message.trim();
       if (!text) return;
 
-      void persistMessage("user", text);
       void sendMessage({ text }).catch((error: unknown) => {
         console.error("Failed to continue conversation:", error);
         toastManager.add({
@@ -437,7 +459,7 @@ export function ChatTranscript({
         });
       });
     },
-    [persistMessage, sendMessage, toastManager],
+    [sendMessage, toastManager],
   );
 
   // Every ```python marimo fence in assistant messages becomes an artifact.
@@ -482,7 +504,9 @@ export function ChatTranscript({
   const deepLinkConsumedRef = useRef(false);
   const refreshRecords = useCallback(
     async (complete: MarimoArtifact[]) => {
-      if (complete.length === 0) {
+      // No id yet (brand-new chat on /dashboard): skip notebook sync — the
+      // records re-sync when the page navigates to /dashboard/chat/<id>.
+      if (!conversationId || complete.length === 0) {
         setRecords([]);
         return;
       }
@@ -720,11 +744,15 @@ export function ChatTranscript({
                           />
                         </PromptInputAction>
 
+                        {/* While a turn is in flight, swap the arrow for a
+                        spinner. We render Loader as the icon instead of using
+                        the Button `loading` prop: that prop also disables the
+                        button, and here a click must still stop generation. */}
                         <Button
                           variant="primary"
                           size="sm"
                           shape="circle"
-                          icon={ArrowUpIcon}
+                          icon={isLoading ? <Loader size={14} /> : ArrowUpIcon}
                           aria-label={isLoading ? "Stop generating" : "Send message"}
                           title={isLoading ? "Stop generating" : "Send message"}
                           disabled={!prompt.trim() && !isLoading}

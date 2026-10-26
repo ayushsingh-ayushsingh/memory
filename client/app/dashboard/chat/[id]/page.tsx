@@ -1,34 +1,41 @@
 import Link from "next/link";
-import { and, asc, eq } from "drizzle-orm";
 import { Text } from "@cloudflare/kumo";
 import { ChatTranscript } from "@/components/custom/chat-transcript";
-import { getDb } from "@/db";
-import { conversation, message } from "@/db/schema";
+import { backendJson } from "@/lib/backend";
 import { requireSession } from "@/lib/session";
 
 type PageProps = { params: Promise<{ id: string }> };
 
+interface BackendMessage {
+  id: string;
+  role: string;
+  content: string;
+}
+
+interface ConversationDetail {
+  conversation: { id: string; title: string };
+  messages: BackendMessage[];
+}
+
 /**
  * A single chat at /dashboard/chat/<id>.
  *
- * The URL carries the stable conversation id (duplicate titles are fine);
- * the display name lives in the sidebar and header breadcrumbs. History is
- * loaded server-side (ownership-checked) so previously saved conversations
- * always render — including on refresh or bookmark. Unknown ids show a
- * friendly empty state instead of a 404 page.
+ * Conversations and messages live in the backend's Postgres store; history is
+ * loaded server-side (ownership-scoped to the signed-in user) so a chat always
+ * renders on refresh or bookmark. Unknown ids show a friendly empty state.
  */
 export default async function ChatByIdPage({ params }: PageProps) {
   const { id } = await params;
-  const session = await requireSession(`/dashboard/chat/${id}`);
+  // Redirects to /auth when there is no session.
+  await requireSession(`/dashboard/chat/${id}`);
 
-  const rows = await getDb()
-    .select()
-    .from(conversation)
-    .where(and(eq(conversation.id, id), eq(conversation.userId, session.user.id)))
-    .limit(1);
-  const convo = rows[0] ?? null;
+  const detail = await backendJson<ConversationDetail | null>(
+    `/conversations/${encodeURIComponent(id)}`,
+    {},
+    null,
+  );
 
-  if (!convo) {
+  if (!detail) {
     return (
       <main className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-5">
         <Text as="h2" variant="heading">
@@ -44,15 +51,11 @@ export default async function ChatByIdPage({ params }: PageProps) {
     );
   }
 
-  const messages = await getDb()
-    .select({
-      id: message.id,
-      role: message.role,
-      content: message.content,
-    })
-    .from(message)
-    .where(eq(message.conversationId, convo.id))
-    .orderBy(asc(message.createdAt));
-
-  return <ChatTranscript key={convo.id} conversationId={convo.id} initialMessages={messages} />;
+  return (
+    <ChatTranscript
+      key={detail.conversation.id}
+      conversationId={detail.conversation.id}
+      initialMessages={detail.messages}
+    />
+  );
 }

@@ -3,9 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Dialog, DropdownMenu, Input, Text } from "@cloudflare/kumo";
-import { LaptopIcon, PencilSimpleIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
+import {
+  LaptopIcon,
+  PencilSimpleIcon,
+  SignOutIcon,
+  TrashIcon,
+  UserIcon,
+} from "@phosphor-icons/react";
 import { useTheme } from "next-themes";
-import { authClient, signOut, useSession } from "@/lib/auth-client";
+import { authClient, getBackendToken, signOut, useSession } from "@/lib/auth-client";
+import { useChatStore } from "@/lib/chat-store";
+
+const backendUrl = process.env.NEXT_PUBLIC_PYTHON_BACKEND_URL ?? "http://localhost:8000";
 
 function initials(name: string | null | undefined, email: string | null | undefined) {
   if (name?.trim()) {
@@ -30,12 +39,21 @@ export function UserAvatarDropdown() {
   const [saving, setSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
 
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const user = data?.user;
 
   const openProfile = () => {
     setName(user?.name ?? "");
     setProfileError(null);
     setProfileOpen(true);
+  };
+
+  const openDeleteAll = () => {
+    setDeleteError(null);
+    setDeleteOpen(true);
   };
 
   const saveProfile = async () => {
@@ -57,6 +75,35 @@ export function UserAvatarDropdown() {
       setProfileError("Could not update profile. Please try again.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const deleteAllData = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const token = await getBackendToken();
+      const response = await fetch(`${backendUrl}/account/delete-data`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ confirm: true }),
+      });
+      if (!response.ok) {
+        setDeleteError("Could not delete your data. Please try again.");
+        return;
+      }
+      // Everything is gone: clear the sidebar and land back on a fresh chat.
+      useChatStore.setState({ conversations: [], loaded: false });
+      setDeleteOpen(false);
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setDeleteError("Could not delete your data. Please try again.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -133,6 +180,9 @@ export function UserAvatarDropdown() {
             Profile
           </DropdownMenu.Item>
           <DropdownMenu.Separator />
+          <DropdownMenu.Item icon={TrashIcon} variant="danger" onClick={openDeleteAll}>
+            Delete all my data
+          </DropdownMenu.Item>
           <DropdownMenu.Item icon={SignOutIcon} variant="danger" onClick={handleLogout}>
             Log out
           </DropdownMenu.Item>
@@ -163,6 +213,38 @@ export function UserAvatarDropdown() {
             />
             <Button variant="primary" loading={saving} disabled={saving} onClick={saveProfile}>
               Save changes
+            </Button>
+          </div>
+        </Dialog>
+      </Dialog.Root>
+
+      <Dialog.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <Dialog className="p-8">
+          <Dialog.Title className="text-lg font-semibold">Delete all your data?</Dialog.Title>
+          <Dialog.Description className="mt-1.5 text-sm text-kumo-subtle">
+            This will delete all your chats. It will also erase everything the assistant has
+            learned about you. This cannot be undone. Your account stays the same.
+          </Dialog.Description>
+          {deleteError && (
+            <div className="mt-3 text-sm">
+              <Text variant="error">{deleteError}</Text>
+            </div>
+          )}
+          <div className="mt-8 flex justify-end gap-2">
+            <Dialog.Close
+              render={(props) => (
+                <Button variant="secondary" {...props}>
+                  Cancel
+                </Button>
+              )}
+            />
+            <Button
+              variant="primary"
+              loading={deleting}
+              disabled={deleting}
+              onClick={deleteAllData}
+            >
+              Delete everything
             </Button>
           </div>
         </Dialog>

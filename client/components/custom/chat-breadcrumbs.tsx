@@ -26,7 +26,10 @@ export function ChatBreadcrumbs() {
 
   const segments = (pathname ?? "/dashboard").split("/").filter(Boolean);
   // segments[0] is "dashboard" for every page in this layout.
-  const chatId = segments[0] === "dashboard" && segments[1] === "chat" ? segments[2] : undefined;
+  const chatId =
+    segments[0] === "dashboard" && segments[1] === "chat"
+      ? segments[2]
+      : undefined;
 
   if (!chatId) {
     return (
@@ -43,7 +46,9 @@ export function ChatBreadcrumbs() {
     <Breadcrumbs size="sm">
       <Breadcrumbs.Link href="/dashboard">Dashboard</Breadcrumbs.Link>
       <Breadcrumbs.Separator />
-      <Breadcrumbs.Current loading={!loaded && !conversation}>{title}</Breadcrumbs.Current>
+      <Breadcrumbs.Current loading={!loaded && !conversation}>
+        {title}
+      </Breadcrumbs.Current>
     </Breadcrumbs>
   );
 }

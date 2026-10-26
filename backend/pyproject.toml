@@ -29,7 +29,7 @@ dependencies = [
     # FastEmbedCloud inference), so we depend on `fastembed` directly instead.
     "qdrant-client>=1.19.1,<2.0.0",
     "requests>=2.34.2",
-    "sqlalchemy>=2.0.52",
+    "sqlalchemy[asyncio]>=2.0.32",
     "rdflib>=7.0.0",
     "pyshacl>=0.25.0",
     "owlrl>=6.0.2",
@@ -48,6 +48,7 @@ dependencies = [
     # leaves unresolved; `en_core_web_sm` supplies the tagger + parser it needs.
     "spacy>=3.8,<4.0",
     "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+    "asyncpg>=0.32.0",
 ]
 
 # torch comes from the CPU-only index: fastcoref runs on `device="cpu"` and the

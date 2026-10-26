@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { and, asc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { conversation, notebook } from "@/db/schema";
+import { notebook } from "@/db/schema";
+import { backendJson } from "@/lib/backend";
 import { getServerSession } from "@/lib/session";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -10,13 +11,15 @@ function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
-async function ownedConversation(conversationId: string, userId: string): Promise<boolean> {
-  const rows = await getDb()
-    .select({ id: conversation.id })
-    .from(conversation)
-    .where(and(eq(conversation.id, conversationId), eq(conversation.userId, userId)))
-    .limit(1);
-  return Boolean(rows[0]);
+// Ownership lives in the backend's Postgres store; a null detail means the
+// conversation doesn't exist or belongs to another user.
+async function ownedConversation(conversationId: string): Promise<boolean> {
+  const detail = await backendJson<{ conversation: { id: string } } | null>(
+    `/conversations/${encodeURIComponent(conversationId)}`,
+    {},
+    null,
+  );
+  return detail !== null;
 }
 
 function toRecord(row: typeof notebook.$inferSelect) {
@@ -38,7 +41,7 @@ export async function GET(_request: Request, context: RouteContext) {
   if (!session) return unauthorized();
 
   const { id } = await context.params;
-  if (!(await ownedConversation(id, session.user.id))) {
+  if (!(await ownedConversation(id))) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -60,7 +63,7 @@ export async function POST(request: Request, context: RouteContext) {
   if (!session) return unauthorized();
 
   const { id } = await context.params;
-  if (!(await ownedConversation(id, session.user.id))) {
+  if (!(await ownedConversation(id))) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

@@ -175,9 +175,10 @@ export const notebook = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    conversationId: text("conversation_id")
-      .notNull()
-      .references(() => conversation.id, { onDelete: "cascade" }),
+    // No FK to `conversation`: conversations now live in the backend's
+    // Postgres store, so this id matches by convention only (SQLite can't
+    // reference rows in another database).
+    conversationId: text("conversation_id").notNull(),
     // Stable identity of one ```python marimo fence: content hash plus its
     // zero-based position among all notebooks in the conversation. Renames
     // (title) and deletes (hidden) attach to this identity so past

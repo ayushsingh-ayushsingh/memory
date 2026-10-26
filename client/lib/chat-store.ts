@@ -15,12 +15,15 @@ interface ChatStore {
   error: string | null;
   /** Load the user's conversations once (StrictMode-safe via flags). */
   fetchConversations: () => Promise<void>;
-  /** Create a chat and prepend it. Returns null when unauthenticated. */
-  createConversation: (title?: string) => Promise<ChatConversation | null>;
+  /** Force a re-fetch (e.g. after the backend mints a new conversation). */
+  refreshConversations: () => Promise<void>;
   /** Rename an owned chat. Returns false on failure. */
   renameConversation: (id: string, title: string) => Promise<boolean>;
-  /** Delete an owned chat. Returns false on failure. */
-  deleteConversation: (id: string) => Promise<boolean>;
+  /**
+   * Delete an owned chat. When `forgetMemory` is true, also erase what the
+   * agent learned from that chat. Returns false on failure.
+   */
+  deleteConversation: (id: string, forgetMemory?: boolean) => Promise<boolean>;
 }
 
 async function fetchJson(input: string, init?: RequestInit): Promise<unknown> {
@@ -54,19 +57,18 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
     }
   },
 
-  createConversation: async (title = "New chat") => {
+  refreshConversations: async () => {
+    if (get().loading) return;
+    set({ loading: true, error: null });
     try {
-      const created = (await fetchJson("/api/conversations", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ title }),
-      })) as ChatConversation;
-      set((state) => ({
-        conversations: [created, ...state.conversations],
-      }));
-      return created;
+      const data = (await fetchJson("/api/conversations")) as {
+        conversations: ChatConversation[];
+      };
+      set({ conversations: data.conversations, loaded: true });
     } catch {
-      return null;
+      set({ error: "Failed to load chats", loaded: true });
+    } finally {
+      set({ loading: false });
     }
   },
 
@@ -99,13 +101,15 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
     }
   },
 
-  deleteConversation: async (id) => {
+  deleteConversation: async (id, forgetMemory = false) => {
     const previous = get().conversations;
     set((state) => ({
       conversations: state.conversations.filter((item) => item.id !== id),
     }));
     try {
-      await fetchJson(`/api/conversations/${id}`, { method: "DELETE" });
+      await fetchJson(`/api/conversations/${id}?forgetMemory=${forgetMemory}`, {
+        method: "DELETE",
+      });
       return true;
     } catch {
       // Restore on failure so the UI doesn't lie.
